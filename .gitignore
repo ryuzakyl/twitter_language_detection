@@ -1,0 +1,5 @@
+# excluding .idea folder (pycharm's solution folder)
+/.idea
+
+# excluding all .pyc files
+*.pyc

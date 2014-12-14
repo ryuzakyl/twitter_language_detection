@@ -41,13 +41,39 @@ def probabilistic_similarity(lang_model, query_model):
     """
 
     # computing all the features appearances in the language model
-    lang_features_total = sum(lang_model.values())
+    lang_features_total = float(sum(lang_model.values()))
 
     # computing appearances of query features in the language model
-    query_features_total = [lang_model[f] for f in query_model if f in lang_model]
+    query_features_total = float(sum([lang_model[f] for f in query_model if f in lang_model]))
 
     # returning the normalization (probability that the query belongs to that language)
-    return float(query_features_total) / float(lang_features_total)
+    return query_features_total / lang_features_total
+
+
+def normalized_probabilistic_similarity(lang_model, query_model):
+    """
+    Returns the 'normalized probability' (invented by me) of a query text belongs to a language model
+
+    :rtype : float
+    :param lang_model: The model of a language (usually a dictionary of features and it's values)
+    :param query_model: The query text (usually a dictionary of features and it's values)
+    :return: The normalized probability that the given query belongs to the provided language model
+    """
+
+    # computing total of the features appearances in the language model
+    lang_total = float(sum(lang_model.values()))
+
+    # computing total of the features appearances in the query
+    query_total = float(sum(query_model.values()))
+
+    # lambda function to compute distance
+    d = lambda x: 1.0 if x not in lang_model else abs(query_model[x] / query_total - lang_model[x] / lang_total)
+
+    # computing the total distance of the query to the model
+    query_total_distance = float(sum([d(f) for f in query_model]))
+
+    # returning the normalized probability
+    return 1.0 - query_total_distance / len(query_model)
 
 
 def out_of_place_similarity(lang_model, query_model, tob_best_features=100):

@@ -10,19 +10,19 @@ import normalization
 # ----------------------------------------------------------------------
 
 # german language code
-GERMAN = 0
+GERMAN = 1
 
 # english language code
-ENGLISH = 1
+ENGLISH = 2
 
 # spanish language code
-SPANISH = 2
+SPANISH = 4
 
 # french language code
-FRENCH = 3
+FRENCH = 8
 
 # italian language code
-ITALIAN = 4
+ITALIAN = 16
 
 # language codes for the chosen languages
 language_id_to_code_mapper = {
@@ -44,20 +44,26 @@ language_id_to_code_mapper = {
 
 # ----------------------------------------------------------------------
 
+# smallwords model of 3rd party
+MODEL_3RD_PARTY_3_GRAMS = 1
+
 # simple 2-grams model
-MODEL_2_GRAMS = 0
+MODEL_2_GRAMS = 2
 
 # simple 3-grams model
-MODEL_3_GRAMS = 1
+MODEL_3_GRAMS = 4
 
 # combined 2-grams and 3-grams model
-MODEL_2_3_GRAMS = 2
+MODEL_2_3_GRAMS = 8
 
 # simple smallwords model
-MODEL_SMALLWORDS = 3
+MODEL_SMALLWORDS = 16
 
 # mapper between language code and model name
 model_type_to_name_mapper = {
+    # smallwords model of 3rd party
+    MODEL_3RD_PARTY_3_GRAMS: '3rdparty-3grams',
+
     # simple 2-grams model
     MODEL_2_GRAMS:      'vmml-2grams',
 
@@ -99,14 +105,31 @@ training_base_path = './train'
 # ----------------------------------------------------------------------
 
 
-def build_models(model_type=MODEL_3_GRAMS):
+def build_models_for_each_language(model_type=MODEL_3_GRAMS):
+    """
+    Builds the models of all supported languages of certain model type
+
+    :rtype : None
+    :param model_type: Type of model to build
+    """
+
     # for each language for training
     for lang_id in language_id_to_code_mapper:
-        # build the corresponding model
-        build_model_for_language(lang_id, model_type)
+        # if the model is defined by me
+        if not is_3rd_party_model(model_type):
+            # build the corresponding model
+            build_model(lang_id, model_type)
 
 
-def build_model_for_language(language_id, model_type):
+def build_model(language_id, model_type):
+    """
+    Builds a model for a specific language
+
+    :rtype : None
+    :param language_id: Language id to build the model for
+    :param model_type: Type of model to build
+    """
+
     # getting the language code from it's id
     language_code = get_language_code(language_id)
 
@@ -118,7 +141,7 @@ def build_model_for_language(language_id, model_type):
     training_data_handles = get_training_data_handles(training_data_path)
 
     # computing the model data depending on the selected model type
-    model_data = compute_model(training_data_handles, model_type)
+    model_data = compute_model_data(training_data_handles, model_type)
 
     # building the model's full path
     model_path = "%s/%s/%s.txt" % (models_base_path, language_code, model_name)
@@ -128,7 +151,16 @@ def build_model_for_language(language_id, model_type):
         f.write(model_data)
 
 
-def compute_model(training_data_handles, model_type):
+def compute_model_data(training_data_handles, model_type):
+    """
+    Computes the model data from training samples
+
+    :rtype : str
+    :param training_data_handles: Handles to the files containing the model data
+    :param model_type: Type of model to build
+    :return: The model data as a json string
+    """
+
     # if the selected model type is not supported
     if model_type not in model_generator_mapper:
         raise Exception('Unknown model type provided.')
@@ -196,7 +228,7 @@ def get_language_code(language_id):
     """
     Gets the language code from the associated id
 
-    :rtype : string
+    :rtype : str
     :param language_id: The id of the language
     :return: The language code corresponding to the provided id
     """
@@ -223,3 +255,101 @@ def get_model_name(model_type):
 
     # raising an exception for unknown model type
     raise Exception('Unknown model type received.')
+
+
+def is_3rd_party_model(model_type):
+    """
+    Determines if a model type is a 3rdparty model
+
+    :rtype : bool
+    :param model_type: The model type to analyze
+    :return: True if it is 3rdparty, False otherwise
+    """
+
+    # only MODEL_3RD_PARTY_3_GRAMS is a 3rdparty model
+    return model_type == MODEL_3RD_PARTY_3_GRAMS
+
+# ----------------------------------------------------------------------
+
+
+def load_models_by_language(language_id):
+    """
+    Loads all the models built for a specific language
+
+    :rtype : list
+    :param language_id: Language id of the language of interest
+    :return: All the models built for a specific language
+    """
+
+    # loading all the models of a specific language
+    return [load_model(language_id, model_type) for model_type in model_type_to_name_mapper]
+
+
+def load_models_by_type(model_type):
+    """
+    Loads all the models of a specific model type
+
+    :rtype : list
+    :param model_type: Model type lo load
+    :return: All the models of certain type
+    """
+
+    # loading the models for each language supported
+    return [load_model(lang_id, model_type) for lang_id in language_id_to_code_mapper]
+
+
+def load_model(language_id, model_type):
+    """
+    Loads a model of certain language and a specific type
+
+    :rtype : dict
+    :param language_id: Language id of the model to load
+    :param model_type: Type of the model to load
+    :return: The model required
+    """
+
+    # getting the language code from it's id
+    language_code = get_language_code(language_id)
+
+    # getting the model name from it's type
+    model_name = get_model_name(model_type)
+
+    # building the model's full path
+    model_full_path = "%s/%s/%s.txt" % (models_base_path, language_code, model_name)
+
+    # returning the model loaded directly from file
+    return load_model_from_file(model_full_path)
+
+
+def load_model_from_file(model_full_path):
+    """
+    Loads a model from file
+
+    :rtype : dict
+    :param model_full_path: Path to the file that holds the model data
+    :return: The model information
+    """
+
+    # trying to load the model from file
+    try:
+        # opening the file that has the model data
+        with codecs.open(model_full_path, 'r') as f:
+            # reading the model data
+            model_data = u"%s" % f.read()
+
+            # escaping unicode characters (\u00fb, etc.)
+            model_data = model_data.decode('unicode_escape')
+
+            # building the model features
+            model_features = eval(model_data)
+
+            # returning the model fatures
+            return model_features
+
+    # in case of an exception
+    except Exception, e:
+        # printing exception message
+        print str(e)
+
+        # retuning None
+        return None

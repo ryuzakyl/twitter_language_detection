@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 import htmlentitydefs
 
@@ -33,10 +35,13 @@ def htmlentity2unicode(text):
 
         if name in htmlentitydefs.name2codepoint.keys():
             result += unichr(htmlentitydefs.name2codepoint[name])
+
         elif num16_regex.match(name):
             result += unichr(int(u'0'+name[1:], 16))
+
         elif num10_regex.match(name):
             result += unichr(int(name[1:]))
+
     return result
 
 re_ignore_i = re.compile(r'[^I]')
@@ -50,31 +55,36 @@ def normalize_text(org):
         label, org = m.groups()
     else:
         label = ""
+
     m = re.search(r'\t([^\t]+)$', org)
+
     if m:
         s = m.group(0)
     else:
         s = org
+
     s = htmlentity2unicode(s)
     s = re.sub(u'[\u2010-\u2015]', '-', s)
     s = re.sub(u'[0-9]+', '0', s)
     s = re.sub(u'[^\u0020-\u007e\u00a1-\u024f\u0300-\u036f\u1e00-\u1eff]+', ' ', s)
     s = re.sub(u'  +', ' ', s)
 
-    # # vietnamese normalization
-    # s = re_vietnamese.sub(lambda x:vietnamese_norm[x.group(0)], s)
-
-    # # lower case with Turkish
-    # s = re_ignore_i.sub(lambda x:x.group(0).lower(), s)
-    # #if re_turkish_alphabet.search(s):
-    # #    s = s.replace(u'I', u'\u0131')
-    # #s = s.lower()
-
-    # # Romanian normalization
-    # s = s.replace(u'\u0219', u'\u015f').replace(u'\u021b', u'\u0163')
-
+    # specific twitter normalization
     s = normalize_twitter(s)
+
+    # asd
     s = re_latin_cont.sub(r'\1\1', s)
+
+    # asd
     s = re_symbol_cont.sub(r'\1', s)
 
     return label, s.strip(), org
+
+label, text, org_text = normalize_text(u'@l 200 hola $5.13 mundo!!!, :) este &gt; es &amp; un @kira tweet en español. ver http://www.google.com')
+
+# print label
+print text
+print org_text
+print ""
+
+print u">" == u"&gt;"

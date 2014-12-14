@@ -100,8 +100,9 @@ training_base_path = './train'
 
 
 def build_models(model_type=MODEL_3_GRAMS):
-    # building model for each language
+    # for each language for training
     for lang_id in language_id_to_code_mapper:
+        # build the corresponding model
         build_model_for_language(lang_id, model_type)
 
 
@@ -133,7 +134,7 @@ def compute_model(training_data_handles, model_type):
         raise Exception('Unknown model type provided.')
 
     # getting the model data generator
-    generate_model_data = model_generator_mapper[model_type]
+    model_data_generator = model_generator_mapper[model_type]
 
     # trying to compute the model data
     try:
@@ -149,7 +150,7 @@ def compute_model(training_data_handles, model_type):
             cleaned_text = normalization.clean_text(file_content)
 
             # getting the features from that text
-            text_features = generate_model_data(cleaned_text)
+            text_features = model_data_generator(cleaned_text)
 
             # counting frequency of features
             for feat in text_features:
@@ -180,11 +181,12 @@ def get_training_data_handles(training_data_path):
     :param training_data_path: The folder where all the training data is located
     :return: The handles to the training data files
     """
-    # getting the paths of the files in the given directory
-    files_paths = [os.path.join(training_data_path, f_path) for _, _, f_path in os.listdir(training_data_path)]
+
+    # getting the paths of the files in the given directory (assuming all elements are files)
+    files_paths = [os.path.join(training_data_path, f_path) for f_path in os.listdir(training_data_path)]
 
     # creating the file handles
-    handles = [open(f_path, 'r', encoding='utf-8') for f_path in files_paths]
+    handles = [open(f_path, 'r') for f_path in files_paths]
 
     # returning only the valid handles
     return filter(lambda x: x is not None, handles)
@@ -198,6 +200,7 @@ def get_language_code(language_id):
     :param language_id: The id of the language
     :return: The language code corresponding to the provided id
     """
+
     # mapping language id to it's code
     if language_id in language_id_to_code_mapper:
         return language_id_to_code_mapper[language_id]
@@ -213,6 +216,7 @@ def get_model_name(model_type):
     :param model_type: The type of the model
     :return: The model name corresponding to the provided type
     """
+
     # mapping model type to it's name
     if model_type in model_type_to_name_mapper:
         return model_type_to_name_mapper[model_type]

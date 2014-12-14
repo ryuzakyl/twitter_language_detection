@@ -1,21 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# ------------------------------------------------------------------
+from language_detection import models
 
-# import time
-# start = time.time()
-#
-# s = 'hola mundo, this is a fucking tweet in spanglish'
-# ngrams = get_ngrams(s, 3, False)
-#
-# end = time.time()
-#
-# print end - start
-# print "|".join(ngrams)
-
-# ------------------------------------------------------------------
-
-s0 = "♥"
-print s0
-
-# ------------------------------------------------------------------
+models.build_models(models.MODEL_SMALLWORDS)

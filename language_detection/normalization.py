@@ -2,6 +2,25 @@
 
 import re
 
+# ------------------------------------------------------------------------------
+
+# method to clean a standard text
+CLEAN_STANDARD_TEXT = 1
+
+# method to clean a tweet
+CLEAN_TWEET = 2
+
+# functions for the available cleaning text methods
+clean_text_method_mapper = {
+    # method to clean a standard text
+    CLEAN_STANDARD_TEXT: lambda text: clean_text(text),
+
+    # method to clean a tweet
+    CLEAN_TWEET: lambda text: clean_tweet(text)
+}
+
+# ------------------------------------------------------------------------------
+
 # unwanted characters in a text for language detection
 unwanted_chars = u'.,;:¡!¿?1234567890-_+-=()[]<>{}\|/""*@#$%&~' + u"'"
 
@@ -93,3 +112,20 @@ def insert_pad(text, pad_left=True, pad_right=True, pad_symbol=' '):
 
     # returning the string with pads
     return "%s%s%s" % (pad_left_str, text, pad_right_str)
+
+
+def clean_data_set(data_set, are_tweets=False):
+    """
+    Cleans certain data set making a difference if data are tweets or not
+
+    :rtype : list
+    :param data_set: The data set of interest
+    :param are_tweets: Indicates if the data are tweets
+    :return: The cleaned (normalized) data set
+    """
+
+    # returning the cleaned data set
+    return [
+        (lang_code, clean_tweet(text) if are_tweets else clean_text(text))
+        for lang_code, text in data_set
+    ]

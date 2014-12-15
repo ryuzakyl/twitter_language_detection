@@ -102,10 +102,93 @@ models_base_path = './models'
 # the base path where the training data is stored
 training_base_path = './train'
 
+# the base path where the training data is stored
+test_set_base_path = './test'
+
+# ------------------------------------------------------------------------------
+
+
+def compute_model_for_text(text, model_type=MODEL_3_GRAMS, clean_method=normalization.CLEAN_TWEET):
+    """
+    Builds a model for a given text
+
+
+    :rtype : dict
+    :param text: The provided text
+    :param model_type: The model type
+    :param clean_method: The type of text cleaning method
+    :return: The computed model
+    """
+
+    # validating model type
+    if model_type not in model_generator_mapper:
+        raise Exception('Unknown model type received.')
+
+    # validating cleaning method
+    if clean_method not in normalization.clean_text_method_mapper:
+        raise Exception('Unknown text cleaning method received.')
+
+    # building the model for the data set just created
+    model_features = compute_model_from_data_set([text], model_type, clean_method)
+
+    # returning the model features
+    return model_features
+
+
+def compute_model_from_data_set(data_set, model_type=MODEL_3_GRAMS, clean_method=normalization.CLEAN_TWEET):
+    """
+    Builds a model for a given data set
+
+
+    :rtype : dict
+    :param data_set: The provided data set
+    :param model_type: The model type
+    :param clean_method: The type of text cleaning method
+    :return: The computed model
+    """
+
+    # validating model type
+    if model_type not in model_generator_mapper:
+        raise Exception('Unknown model type received.')
+
+    # validating cleaning method
+    if clean_method not in normalization.clean_text_method_mapper:
+        raise Exception('Unknown text cleaning method received.')
+
+    # getting the model data generator
+    model_generator = model_generator_mapper[model_type]
+
+    # getting the text cleaner method
+    text_cleaner = normalization.clean_text_method_mapper[clean_method]
+
+    # creating the model features
+    model_features = dict()
+
+    # for each text in the data set
+    for text in data_set:
+        # cleaning text
+        cleaned_text = text_cleaner(text)
+
+        # getting the features from that text
+        text_features = model_generator(cleaned_text)
+
+        # counting frequency of features
+        for feat in text_features:
+            # incrementing frequency
+            if feat in model_features:
+                model_features[feat] += 1
+
+            # adding the feature to the dictionary
+            else:
+                model_features[feat] = 1
+
+    # returning the model features
+    return model_features
+
 # ----------------------------------------------------------------------
 
 
-def build_models_for_each_language(model_type=MODEL_3_GRAMS):
+def build_models_for_all_languages(model_type=MODEL_3_GRAMS):
     """
     Builds the models of all supported languages of certain model type
 
@@ -165,34 +248,21 @@ def compute_model_data(training_data_handles, model_type):
     if model_type not in model_generator_mapper:
         raise Exception('Unknown model type provided.')
 
-    # getting the model data generator
-    model_data_generator = model_generator_mapper[model_type]
-
     # trying to compute the model data
     try:
-        # structure that will store the model features
-        model_features = dict()
+        # data set container
+        data_set = list()
 
         # for each file of training data
         for f in training_data_handles:
             # reading all the file content (decoded in utf8 format)
             file_content = f.read().decode('utf8')
 
-            # cleaning the text
-            cleaned_text = normalization.clean_text(file_content)
+            # appending cleaned text to data set
+            data_set.append(file_content)
 
-            # getting the features from that text
-            text_features = model_data_generator(cleaned_text)
-
-            # counting frequency of features
-            for feat in text_features:
-                # incrementing frequency
-                if feat in model_features:
-                    model_features[feat] += 1
-
-                # adding the feature to the dictionary
-                else:
-                    model_features[feat] = 1
+        # building the model for the data set just created
+        model_features = compute_model_from_data_set(data_set, model_type, normalization.CLEAN_STANDARD_TEXT)
 
         # converting and returning the model data as json string format
         return json.dumps(model_features)
@@ -215,7 +285,11 @@ def get_training_data_handles(training_data_path):
     """
 
     # getting the paths of the files in the given directory (assuming all elements are files)
-    files_paths = [os.path.join(training_data_path, f_path) for f_path in os.listdir(training_data_path)]
+    files_paths = [
+        os.path.join(training_data_path, f_path)
+        for f_path in os.listdir(training_data_path)
+        if os.path.isfile(os.path.join(training_data_path, f_path))
+    ]
 
     # creating the file handles
     handles = [open(f_path, 'r') for f_path in files_paths]
@@ -282,7 +356,7 @@ def load_models_by_language(language_id):
     """
 
     # loading all the models of a specific language
-    return [load_model(language_id, model_type) for model_type in model_type_to_name_mapper]
+    return [(model_type, load_model(language_id, model_type)) for model_type in model_type_to_name_mapper]
 
 
 def load_models_by_type(model_type):
@@ -295,7 +369,7 @@ def load_models_by_type(model_type):
     """
 
     # loading the models for each language supported
-    return [load_model(lang_id, model_type) for lang_id in language_id_to_code_mapper]
+    return [(lang_id, load_model(lang_id, model_type)) for lang_id in language_id_to_code_mapper]
 
 
 def load_model(language_id, model_type):
@@ -353,3 +427,76 @@ def load_model_from_file(model_full_path):
 
         # retuning None
         return None
+
+# ----------------------------------------------------------------------
+
+
+def load_test_set_for_all_languages(clean_data_set=False):
+    # test samples
+    test_data = list()
+
+    # for each language for training
+    for lang_id in language_id_to_code_mapper:
+        # build the corresponding test set
+        test_data += load_test_set_by_language(lang_id, clean_data_set)
+
+    # returning the test data for all languages
+    return test_data
+
+
+def load_test_set_by_language(language_id, clean_data_set=False):
+    # getting the language code from it's id
+    language_code = get_language_code(language_id)
+
+    # getting all the handles to the test files
+    test_data_path = "%s/%s/" % (test_set_base_path, language_code)
+    test_data_handles = get_test_data_handles(test_data_path)
+
+    # attempting to build the test set
+    try:
+        # the container of the test set
+        test_set = list()
+
+        # for each handle
+        for f in test_data_handles:
+            # reading all the tweets
+            tweets = f.readlines()
+
+            # adding the correct language label and encoding in utf-8
+            test_set += [(language_code, t.decode('utf8')) for t in tweets]
+
+        # cleaning data set if required
+        test_set = normalization.clean_data_set(test_set, are_tweets=True) if clean_data_set else test_set
+
+        # returning the test set built
+        return test_set
+    # in case of any errors
+    except Exception, e:
+        # printing exception information
+        print str(e)
+
+        # returning none
+        return None
+
+
+def get_test_data_handles(test_data_path):
+    """
+    Gets the valid handles to the all the files in the test data path
+
+    :rtype : list
+    :param test_data_path: The folder where all the test data is located
+    :return: The handles to the test data files
+    """
+
+    # getting the paths of the files in the given directory (assuming all elements are files)
+    files_paths = [
+        os.path.join(test_data_path, f_path)
+        for f_path in os.listdir(test_data_path)
+        if os.path.isfile(os.path.join(test_data_path, f_path))
+    ]
+
+    # creating the file handles
+    handles = [open(f_path, 'r') for f_path in files_paths]
+
+    # returning only the valid handles
+    return filter(lambda x: x is not None, handles)

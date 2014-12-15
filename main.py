@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from language_detection import models
+from language_detection import experiments as tests
+
+tests.analyze_language(models.SPANISH)
 
 # for l_id in models.language_id_to_code_mapper:
 #     print models.language_id_to_code_mapper[l_id]

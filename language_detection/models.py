@@ -5,7 +5,7 @@ import json
 import codecs
 
 import features
-import normalization
+import normalization as norm
 
 # ----------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ MODEL_SMALLWORDS = 16
 
 # mapper between language code and model name
 model_type_to_name_mapper = {
-    # smallwords model of 3rd party
+    # simple 3-grams model of 3rd party
     MODEL_3RD_PARTY_3_GRAMS: '3rdparty-3grams',
 
     # simple 2-grams model
@@ -81,6 +81,9 @@ model_type_to_name_mapper = {
 
 # model generator functions for the available model types
 model_generator_mapper = {
+    # simple 3-grams model of 3rd party
+    MODEL_3RD_PARTY_3_GRAMS: lambda text: features.get_n_grams(text, 3),
+
     # simple 2-grams model
     MODEL_2_GRAMS: lambda text: features.get_n_grams(text, 2),
 
@@ -108,7 +111,7 @@ test_set_base_path = './test'
 # ------------------------------------------------------------------------------
 
 
-def compute_model_for_text(text, model_type=MODEL_3_GRAMS, clean_method=normalization.CLEAN_TWEET):
+def compute_model_for_text(text, model_type=MODEL_3_GRAMS, clean_method=norm.CLEAN_TWEET):
     """
     Builds a model for a given text
 
@@ -125,7 +128,7 @@ def compute_model_for_text(text, model_type=MODEL_3_GRAMS, clean_method=normaliz
         raise Exception('Unknown model type received.')
 
     # validating cleaning method
-    if clean_method not in normalization.clean_text_method_mapper:
+    if clean_method not in norm.clean_text_method_mapper:
         raise Exception('Unknown text cleaning method received.')
 
     # building the model for the data set just created
@@ -135,7 +138,7 @@ def compute_model_for_text(text, model_type=MODEL_3_GRAMS, clean_method=normaliz
     return model_features
 
 
-def compute_model_from_data_set(data_set, model_type=MODEL_3_GRAMS, clean_method=normalization.CLEAN_TWEET):
+def compute_model_from_data_set(data_set, model_type=MODEL_3_GRAMS, clean_method=norm.CLEAN_TWEET):
     """
     Builds a model for a given data set
 
@@ -152,14 +155,14 @@ def compute_model_from_data_set(data_set, model_type=MODEL_3_GRAMS, clean_method
         raise Exception('Unknown model type received.')
 
     # validating cleaning method
-    if clean_method not in normalization.clean_text_method_mapper:
+    if clean_method not in norm.clean_text_method_mapper:
         raise Exception('Unknown text cleaning method received.')
 
     # getting the model data generator
     model_generator = model_generator_mapper[model_type]
 
     # getting the text cleaner method
-    text_cleaner = normalization.clean_text_method_mapper[clean_method]
+    text_cleaner = norm.clean_text_method_mapper[clean_method]
 
     # creating the model features
     model_features = dict()
@@ -262,7 +265,7 @@ def compute_model_data(training_data_handles, model_type):
             data_set.append(file_content)
 
         # building the model for the data set just created
-        model_features = compute_model_from_data_set(data_set, model_type, normalization.CLEAN_STANDARD_TEXT)
+        model_features = compute_model_from_data_set(data_set, model_type, norm.CLEAN_STANDARD_TEXT)
 
         # converting and returning the model data as json string format
         return json.dumps(model_features)
@@ -417,7 +420,7 @@ def load_model_from_file(model_full_path):
             # building the model features
             model_features = eval(model_data)
 
-            # returning the model fatures
+            # returning the model features
             return model_features
 
     # in case of an exception
@@ -431,20 +434,20 @@ def load_model_from_file(model_full_path):
 # ----------------------------------------------------------------------
 
 
-def load_test_set_for_all_languages(clean_data_set=False):
+def load_test_set_for_all_languages(clean_method=norm.CLEAN_TWEET):
     # test samples
     test_data = list()
 
     # for each language for training
     for lang_id in language_id_to_code_mapper:
         # build the corresponding test set
-        test_data += load_test_set_by_language(lang_id, clean_data_set)
+        test_data += load_test_set_by_language(lang_id, clean_method)
 
     # returning the test data for all languages
     return test_data
 
 
-def load_test_set_by_language(language_id, clean_data_set=False):
+def load_test_set_by_language(language_id, clean_method=norm.CLEAN_TWEET):
     # getting the language code from it's id
     language_code = get_language_code(language_id)
 
@@ -463,10 +466,10 @@ def load_test_set_by_language(language_id, clean_data_set=False):
             tweets = f.readlines()
 
             # adding the correct language label and encoding in utf-8
-            test_set += [(language_code, t.decode('utf8')) for t in tweets]
+            test_set += [(language_id, t.decode('utf8')) for t in tweets]
 
         # cleaning data set if required
-        test_set = normalization.clean_data_set(test_set, are_tweets=True) if clean_data_set else test_set
+        test_set = norm.clean_data_set(test_set, clean_method)
 
         # returning the test set built
         return test_set

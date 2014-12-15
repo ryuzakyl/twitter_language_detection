@@ -3,24 +3,24 @@
 # -------------------------------------------------------------------------
 
 # simple probability distance
-DISTANCE_PROBABILITY = 1
+DIST_PROB = 1
 
 # simple normalized probability distance
-DISTANCE_PROBABILITY_NORMALIZED = 2
+DIST_PROB_NORM = 2
 
 # simple out of place distance
-DISTANCE_OUT_OF_PLACE = 4
+DIST_OUT_OF_PLACE = 4
 
 # distance between model and query mapper
 distance_mapper = {
     # simple probability distance
-    DISTANCE_PROBABILITY: lambda m, q: probabilistic_similarity(m, q),
+    DIST_PROB: lambda m, q: probabilistic_similarity(m, q),
 
     # simple normalized probability distance
-    DISTANCE_PROBABILITY_NORMALIZED: lambda m, q: normalized_probabilistic_similarity(m, q),
+    DIST_PROB_NORM: lambda m, q: normalized_probabilistic_similarity(m, q),
 
     # simple out of place distance
-    DISTANCE_OUT_OF_PLACE: lambda m, q: out_of_place_similarity(m, q)
+    DIST_OUT_OF_PLACE: lambda m, q: out_of_place_similarity(m, q)
 }
 
 # -------------------------------------------------------------------------
@@ -67,6 +67,17 @@ def probabilistic_similarity(lang_model, query_model):
     :return: The probability that the given query belongs to the provided language model
     """
 
+    # if there's no query, then there's no change it belongs to the model
+    if query_model is None:
+        return 0.0
+
+    # getting the length of the query model
+    n = len(query_model)
+
+    # if the query model is empty, then there's no change it belongs to the model
+    if n == 0:
+        return 0.0
+
     # computing all the features appearances in the language model
     lang_features_total = float(sum(lang_model.values()))
 
@@ -87,6 +98,17 @@ def normalized_probabilistic_similarity(lang_model, query_model):
     :return: The normalized probability that the given query belongs to the provided language model
     """
 
+    # if there's no query, then there's no change it belongs to the model
+    if query_model is None:
+        return 0.0
+
+    # getting the length of the query model
+    n = len(query_model)
+
+    # if the query model is empty, then there's no change it belongs to the model
+    if n == 0:
+        return 0.0
+
     # computing total of the features appearances in the language model
     lang_total = float(sum(lang_model.values()))
 
@@ -100,7 +122,7 @@ def normalized_probabilistic_similarity(lang_model, query_model):
     query_total_distance = float(sum([d(f) for f in query_model]))
 
     # returning the normalized probability
-    return 1.0 - query_total_distance / len(query_model)
+    return 1.0 - query_total_distance / n
 
 
 def out_of_place_similarity(lang_model, query_model):
@@ -112,8 +134,19 @@ def out_of_place_similarity(lang_model, query_model):
     :param query_model: The query text (usually a dictionary of features and it's values)
     """
 
+    # if there's no query, then there's no change it belongs to the model
+    if query_model is None:
+        return 0.0
+
+    # getting the length of the query model
+    n = len(query_model)
+
+    # if the query model is empty, then there's no change it belongs to the model
+    if n == 0:
+        return 0.0
+
     # computing the amount of features for analysis
-    features_count = min(len(lang_model), len(query_model))
+    features_count = min(len(lang_model), n)
 
     # sorting the language model in decreasing order of feature frequencies
     lang_model_sorted = sorted(
@@ -173,7 +206,7 @@ def get_index_of_feature(feature_list, item):
 # ------------------------------------------------------------------------------
 
 
-def categorize_text(category_models, query_model, distance=DISTANCE_PROBABILITY):
+def categorize_text(category_models, query_model, distance=DIST_PROB):
     """
     Assigns a category among some category models to the given query model
 
@@ -191,7 +224,7 @@ def categorize_text(category_models, query_model, distance=DISTANCE_PROBABILITY)
     return get_most_likely_category(pertinence_probabilities)
 
 
-def compute_pertinence_probabilities(category_models, query_model, distance=DISTANCE_PROBABILITY):
+def compute_pertinence_probabilities(category_models, query_model, distance=DIST_PROB):
     """
     Computes the pertinence probabilities of the query model to each of the provided category models
 

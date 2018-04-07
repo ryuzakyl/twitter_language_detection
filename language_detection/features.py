@@ -37,7 +37,7 @@ def get_n_grams(text, n):
     """
 
     # returning the list of n-grams
-    return [text[i:i+n] for i in xrange(len(text) - n + 1)]
+    return [text[i:i+n] for i in range(len(text) - n + 1)]
 
 
 def get_smallwords(text, min_length=1, max_length=5):
@@ -164,7 +164,7 @@ def out_of_place_similarity(lang_model, query_model):
 
     # computing distance of the query model to the language model
     similarity = 0.0
-    for i in xrange(features_count):
+    for i in range(features_count):
         # getting the current feature
         feature = query_model_sorted[i]
 
@@ -189,7 +189,7 @@ def get_index_of_feature(feature_list, item):
     """
 
     # getting the indexes where 'item' occurs
-    idxs = [k for k in xrange(len(feature_list)) if feature_list[k][0] == item]
+    idxs = [k for k in range(len(feature_list)) if feature_list[k][0] == item]
 
     # counting the indexes
     idxs_count = len(idxs)
@@ -252,6 +252,8 @@ def get_most_likely_category(pertinence_probabilities, use_similarity_concept=Tr
 
     :rtype : object
     :param pertinence_probabilities: The pertinence probabilities per model
+    :param use_similarity_concept: Whether to use a similarity measure or not
+
     :return: The most likely category
     """
 

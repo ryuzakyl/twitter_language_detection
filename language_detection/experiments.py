@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import models as mod
-import features as feat
-import normalization as norm
+from . import models as mod
+from . import features as feat
+from . import normalization as norm
 
 # -------------------------------------------------------------------------
 
@@ -55,8 +55,3 @@ def test_language_detector(model_type=mod.MODEL_3_GRAMS, distance=feat.DIST_PROB
 
     # returning the precision and the recall
     return precision_total, recall_total
-
-
-# -------------------------------------------------------------------------
-
-# -------------------------------------------------------------------------

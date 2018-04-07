@@ -37,14 +37,20 @@ def clean_text(text, cvt_to_lowercase=True, norm_whitespaces=True):
     characters and replacing whitespace characters for a simple space.
 
     :rtype : string
+    
     :param text: Text to clean
+    :param cvt_to_lowercase: Convert text to lowercase
+    :param norm_whitespaces: Normalize whitespaces
     """
 
     # converting text to lowercase (if required)
     cleaned_text = text.lower() if cvt_to_lowercase else text
 
     # removing unwanted characters
-    cleaned_text = filter(lambda c: c not in unwanted_chars, cleaned_text)
+    cleaned_text = ''.join([
+        c for c in cleaned_text
+        if c not in unwanted_chars
+    ])
 
     # normalizing whitespaces
     cleaned_text = re.sub(r'\s+', ' ', cleaned_text) if norm_whitespaces else cleaned_text
@@ -63,7 +69,7 @@ def clean_tweet(tweet_text):
     """
 
     # converting tweet to lowercase
-    norm_tweet = tweet_text .lower()
+    norm_tweet = tweet_text.lower()
 
     # removing links to urls, usernames (@name) and hashtags (#name)
     norm_tweet = re.sub(r'(@|#|https?://)[^ ]+', '', norm_tweet)

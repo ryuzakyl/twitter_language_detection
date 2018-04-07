@@ -4,8 +4,8 @@ import os
 import json
 import codecs
 
-import features
-import normalization as norm
+from . import features
+from . import normalization as norm
 
 # ----------------------------------------------------------------------
 
@@ -271,9 +271,9 @@ def compute_model_data(training_data_handles, model_type):
         return json.dumps(model_features)
 
     # in case of an exception
-    except Exception, e:
+    except Exception as e:
         # printing exception message
-        print e.message
+        print(e)
 
         raise Exception('Exception thrown in model generation process.')
 
@@ -415,7 +415,7 @@ def load_model_from_file(model_full_path):
             model_data = u"%s" % f.read()
 
             # escaping unicode characters (\u00fb, etc.)
-            model_data = model_data.decode('unicode_escape')
+            # model_data = model_data.decode('unicode_escape')
 
             # building the model features
             model_features = eval(model_data)
@@ -424,9 +424,9 @@ def load_model_from_file(model_full_path):
             return model_features
 
     # in case of an exception
-    except Exception, e:
+    except Exception as e:
         # printing exception message
-        print str(e)
+        print(str(e))
 
         # retuning None
         return None
@@ -466,17 +466,21 @@ def load_test_set_by_language(language_id, clean_method=norm.CLEAN_TWEET):
             tweets = f.readlines()
 
             # adding the correct language label and encoding in utf-8
-            test_set += [(language_id, t.decode('utf8')) for t in tweets]
+            test_set += [
+                (language_id, t)
+                for t in tweets
+            ]
 
         # cleaning data set if required
         test_set = norm.clean_data_set(test_set, clean_method)
 
         # returning the test set built
         return test_set
+
     # in case of any errors
-    except Exception, e:
+    except Exception as e:
         # printing exception information
-        print str(e)
+        print(str(e))
 
         # returning none
         return None
@@ -502,4 +506,4 @@ def get_test_data_handles(test_data_path):
     handles = [open(f_path, 'r') for f_path in files_paths]
 
     # returning only the valid handles
-    return filter(lambda x: x is not None, handles)
+    return list(filter(lambda x: x is not None, handles))
